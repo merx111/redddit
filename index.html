@@ -64,7 +64,7 @@
     #openPostModalBtn {
       position: fixed;
       top: 20px;
-      left: 20%;
+      left: 20px;
       transform: none;
       z-index: 1000;
       background: #ff4500;
@@ -78,6 +78,62 @@
       font-size: 1.1em;
       letter-spacing: 1px;
     }
+
+    /* --- Hamburguesa --- */
+    .hamburger {
+      display: inline-block;
+      cursor: pointer;
+      width: 36px;
+      height: 26px;
+      position: fixed;
+      top: 20px;
+      right: 20px;
+      z-index: 1001;
+    }
+    .hamburger span {
+      display: block;
+      height: 5px;
+      width: 100%;
+      background: #ff4500;
+      margin: 5px 0;
+      border-radius: 2px;
+      transition: 0.3s;
+    }
+    .menu {
+      display: none;
+      position: fixed;
+      top: 56px;
+      right: 20px;
+      background: #181818;
+      border: 1.5px solid #ff4500;
+      padding: 18px 26px 18px 18px;
+      border-radius: 13px;
+      box-shadow: 0 2px 12px #ff450033;
+      z-index: 1100;
+      min-width: 160px;
+      font-size: 1rem;
+      color: #fff;
+      text-align: left;
+    }
+    .menu.active {
+      display: block;
+      animation: modalpop 0.22s cubic-bezier(.47,1.64,.41,.8);
+    }
+    .menu button {
+      background: #ff4500;
+      color: #fff;
+      border: none;
+      border-radius: 10px;
+      padding: 8px 20px;
+      font-size: 1rem;
+      font-family: 'Roboto', sans-serif;
+      margin-top: 10px;
+      cursor: pointer;
+    }
+    .menu button:hover {
+      background: #e03e00;
+    }
+    /* ------------------- */
 
     #authSection {
       max-width: 360px;
@@ -253,8 +309,21 @@
 <body>
   <h2>MiniReddit Mejorado con eliminación</h2>
 
-  <!-- Botón fijo arriba-centro -->
   <button id="openPostModalBtn">Crear post</button>
+
+  <!-- Menú Hamburguesa -->
+  <div class="hamburger" id="hamburger-btn" tabindex="0" aria-label="Menú de usuario" title="Menú">
+    <span></span>
+    <span></span>
+    <span></span>
+  </div>
+  <div class="menu" id="menu">
+    <div id="menu-user-text" style="margin-bottom:10px;">
+      <!-- Aquí se muestra el usuario si está logueado -->
+    </div>
+    <button onclick="logout();hideMenu()">Cerrar sesión</button>
+  </div>
+  <!-- ------------------- -->
 
   <div id="authSection">
     <input id="username" placeholder="Usuario" autocomplete="off" />
@@ -264,7 +333,7 @@
   </div>
 
   <div id="app" style="display:none;">
-    <p>Bienvenido, <span id="currentUser"></span> <button onclick="logout()">Cerrar sesión</button></p>
+    <p>Bienvenido, <span id="currentUser"></span></p>
     <div id="posts"></div>
   </div>
 
@@ -280,6 +349,28 @@
   </div>
 
   <script>
+    // Hamburguesa
+    const btn = document.getElementById('hamburger-btn');
+    const menu = document.getElementById('menu');
+    function hideMenu() { menu.classList.remove('active'); }
+    btn.addEventListener('click', function(e) {
+      e.stopPropagation();
+      menu.classList.toggle('active');
+      updateMenuUserText();
+    });
+    document.addEventListener('click', function(e) {
+      if (!btn.contains(e.target) && !menu.contains(e.target)) {
+        menu.classList.remove('active');
+      }
+    });
+    function updateMenuUserText() {
+      const user = window.currentUser || localStorage.getItem('redditUser');
+      document.getElementById('menu-user-text').innerHTML = user 
+        ? `<span>Usuario: <b style="color:#ff7f50">${user}</b></span>`
+        : '';
+    }
+    // ----------------------
+
     const API_KEY = '$2a$10$W7r2d0gmDZE45aqzwLFbTumNYrlgnya.eify2ghIr2Ebrf0aupxWu';
     const BIN_ID = '684bc56e8a456b7966ad4b58';
     const IMGUR_CLIENT_ID = '6d8568e498ff7bc';
@@ -364,6 +455,7 @@
       localStorage.removeItem('redditUser');
       document.getElementById('authSection').style.display = 'block';
       document.getElementById('app').style.display = 'none';
+      hideMenu();
     }
 
     // Subir archivo a Imgur y obtener URL
@@ -593,6 +685,7 @@
     window.onload = async () => {
       await fetchDB();
       loadFromStorage();
+      updateMenuUserText();
     };
   </script>
 </body>
