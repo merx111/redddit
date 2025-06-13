@@ -364,14 +364,13 @@
       }
     });
 
-    // ¡Aquí el cambio seguro!
+    // Corrige el usuario mostrado en el menú hamburguesa
     function updateMenuUserText() {
       let user = (typeof currentUser === "string" && currentUser) || localStorage.getItem('redditUser');
       document.getElementById('menu-user-text').innerHTML = user 
         ? `<span>Usuario: <b style="color:#ff7f50">${user}</b></span>`
         : '';
     }
-    // ----------------------
 
     const API_KEY = '$2a$10$W7r2d0gmDZE45aqzwLFbTumNYrlgnya.eify2ghIr2Ebrf0aupxWu';
     const BIN_ID = '684bc56e8a456b7966ad4b58';
