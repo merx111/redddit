@@ -1,0 +1,175 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <title>MiniReddit</title>
+  <style>
+    body { background: #111; color: #eee; font-family: sans-serif; padding: 20px; max-width: 700px; margin: auto; }
+    input, textarea { width: 100%; padding: 8px; margin: 5px 0; background: #222; border: 1px solid #444; color: #eee; }
+    button { background: #ff4500; color: white; padding: 8px 16px; border: none; cursor: pointer; }
+    .post, .reply { border: 1px solid #333; padding: 10px; margin: 10px 0; background: #1a1a1a; }
+    .reply { margin-left: 20px; background: #222; }
+  </style>
+</head>
+<body>
+  <h2>MiniReddit</h2>
+
+  <div id="authSection">
+    <input id="username" placeholder="Usuario">
+    <input id="password" type="password" placeholder="Contraseña">
+    <button onclick="register()">Registrar</button>
+    <button onclick="login()">Iniciar Sesión</button>
+  </div>
+
+  <div id="app" style="display:none;">
+    <p>Bienvenido, <span id="currentUser"></span> <button onclick="logout()">Cerrar sesión</button></p>
+
+    <textarea id="newPostText" placeholder="Escribe un nuevo hilo..."></textarea>
+    <input type="file" id="newPostFile">
+    <button onclick="createPost()">Publicar</button>
+
+    <div id="posts"></div>
+  </div>
+
+  <script>
+    const API_KEY = '$2a$10$W7r2d0gmDZE45aqzwLFbTumNYrlgnya.eify2ghIr2Ebrf0aupxWu';
+    const BIN_ID = '684bc56e8a456b7966ad4b58';
+    const IMGUR_CLIENT_ID = '6d8568e498ff7bc';
+
+    let db = { users: [], posts: [] };
+    let currentUser = null;
+
+    function saveToStorage() {
+      localStorage.setItem('redditUser', currentUser);
+    }
+
+    function loadFromStorage() {
+      const user = localStorage.getItem('redditUser');
+      if (user) {
+        currentUser = user;
+        document.getElementById('authSection').style.display = 'none';
+        document.getElementById('app').style.display = 'block';
+        document.getElementById('currentUser').innerText = currentUser;
+      }
+    }
+
+    async function fetchDB() {
+      const res = await fetch(`https://api.jsonbin.io/v3/b/${BIN_ID}/latest`, {
+        headers: { 'X-Master-Key': API_KEY }
+      });
+      const json = await res.json();
+      db = json.record;
+      showPosts();
+    }
+
+    async function updateDB() {
+      await fetch(`https://api.jsonbin.io/v3/b/${BIN_ID}`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          'X-Master-Key': API_KEY,
+          'X-Bin-Versioning': 'false'
+        },
+        body: JSON.stringify(db)
+      });
+    }
+
+    function register() {
+      const user = username.value.trim();
+      const pass = password.value;
+      if (!user || !pass) return alert("Completa usuario y contraseña");
+
+      if (db.users.find(u => u.user === user)) return alert("Usuario ya existe");
+
+      db.users.push({ user, pass });
+      currentUser = user;
+      saveToStorage();
+      updateDB();
+      document.getElementById('authSection').style.display = 'none';
+      document.getElementById('app').style.display = 'block';
+      document.getElementById('currentUser').innerText = currentUser;
+    }
+
+    function login() {
+      const user = username.value.trim();
+      const pass = password.value;
+      const u = db.users.find(u => u.user === user && u.pass === pass);
+      if (!u) return alert("Credenciales incorrectas");
+
+      currentUser = user;
+      saveToStorage();
+      document.getElementById('authSection').style.display = 'none';
+      document.getElementById('app').style.display = 'block';
+      document.getElementById('currentUser').innerText = currentUser;
+    }
+
+    function logout() {
+      localStorage.removeItem('redditUser');
+      location.reload();
+    }
+
+    async function uploadToImgur(file) {
+      const form = new FormData();
+      form.append("image", file);
+      const res = await fetch("https://api.imgur.com/3/image", {
+        method: "POST",
+        headers: { Authorization: `Client-ID ${IMGUR_CLIENT_ID}` },
+        body: form
+      });
+      const json = await res.json();
+      return json.data.link;
+    }
+
+    async function createPost() {
+      const text = newPostText.value.trim();
+      const file = newPostFile.files[0];
+
+      let mediaURL = '';
+      if (file) {
+        mediaURL = await uploadToImgur(file);
+      }
+
+      db.posts.push({ id: Date.now(), user: currentUser, text, media: mediaURL, replies: [] });
+      newPostText.value = '';
+      newPostFile.value = '';
+      await updateDB();
+      showPosts();
+    }
+
+    async function addReply(postId, inputId) {
+      const replyText = document.getElementById(inputId).value.trim();
+      if (!replyText) return;
+
+      const post = db.posts.find(p => p.id === postId);
+      post.replies.push({ user: currentUser, text: replyText });
+      await updateDB();
+      showPosts();
+    }
+
+    function showPosts() {
+      posts.innerHTML = "";
+      db.posts.slice().reverse().forEach(post => {
+        const div = document.createElement('div');
+        div.className = 'post';
+        div.innerHTML = `<b>${post.user}</b>: ${post.text}<br>` +
+          (post.media ? `<br><${post.media.endsWith('.mp4') ? 'video controls' : 'img'} src="${post.media}" style="max-width:100%">` : '') +
+          `<br><input id="reply_${post.id}" placeholder="Responder..."><button onclick="addReply(${post.id}, 'reply_${post.id}')">Enviar</button>`;
+
+        post.replies.forEach(r => {
+          const replyDiv = document.createElement('div');
+          replyDiv.className = 'reply';
+          replyDiv.innerHTML = `<b>${r.user}</b>: ${r.text}`;
+          div.appendChild(replyDiv);
+        });
+
+        posts.appendChild(div);
+      });
+    }
+
+    window.onload = async () => {
+      await fetchDB();
+      loadFromStorage();
+    };
+  </script>
+</body>
+</html>
