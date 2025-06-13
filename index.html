@@ -116,7 +116,7 @@
      background: #181818;
      border-radius: 50%;
      box-shadow: 0 2px 12px #ff450033;
-     padding: 3px;
+     padding: 5px;
      transition: background 0.2s;
     }
    .info-btn:hover svg {
@@ -342,7 +342,11 @@
     <span></span>
   </div>
   <button class="info-btn" id="info-btn" title="Información">
-  <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10" stroke="none"/><rect x="11" y="10" width="2" height="7"/><rect x="11" y="7" width="2" height="2"/></svg>
+  <svg viewBox="0 0 24 24" fill="none">
+    <circle cx="12" cy="12" r="10" fill="#ff4500"/>
+    <rect x="11" y="10" width="2" height="6" rx="1" fill="#fff"/>
+    <rect x="11" y="7" width="2" height="2" rx="1" fill="#fff"/>
+  </svg>
 </button>
   <div class="menu" id="menu">
     <div id="menu-user-text" style="margin-bottom:10px;">
