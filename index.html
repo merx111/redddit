@@ -363,8 +363,10 @@
         menu.classList.remove('active');
       }
     });
+
+    // ¡Aquí el cambio seguro!
     function updateMenuUserText() {
-      const user = window.currentUser || localStorage.getItem('redditUser');
+      let user = (typeof currentUser === "string" && currentUser) || localStorage.getItem('redditUser');
       document.getElementById('menu-user-text').innerHTML = user 
         ? `<span>Usuario: <b style="color:#ff7f50">${user}</b></span>`
         : '';
@@ -378,12 +380,10 @@
     let db = { users: [], posts: [] };
     let currentUser = null;
 
-    // Guarda usuario en localStorage para sesión persistente
     function saveToStorage() {
       localStorage.setItem('redditUser', currentUser);
     }
 
-    // Carga usuario de sesión
     function loadFromStorage() {
       const user = localStorage.getItem('redditUser');
       if (user) {
@@ -394,7 +394,6 @@
       }
     }
 
-    // Obtener DB JSONBin
     async function fetchDB() {
       try {
         const res = await fetch(`https://api.jsonbin.io/v3/b/${BIN_ID}/latest`, {
@@ -408,7 +407,6 @@
       }
     }
 
-    // Actualizar DB JSONBin
     async function updateDB() {
       await fetch(`https://api.jsonbin.io/v3/b/${BIN_ID}`, {
         method: 'PUT',
@@ -421,7 +419,6 @@
       });
     }
 
-    // Registro simple
     function register() {
       const user = document.getElementById('username').value.trim();
       const pass = document.getElementById('password').value.trim();
@@ -436,7 +433,6 @@
       });
     }
 
-    // Login simple (sin hash para simplificar)
     function login() {
       const user = document.getElementById('username').value.trim();
       const pass = document.getElementById('password').value.trim();
@@ -458,7 +454,6 @@
       hideMenu();
     }
 
-    // Subir archivo a Imgur y obtener URL
     async function uploadToImgur(file) {
       const form = new FormData();
       form.append('image', file);
@@ -476,7 +471,6 @@
       }
     }
 
-    // Crear elemento media (img o video)
     function createMediaElement(url) {
       const ext = url.split('.').pop().toLowerCase();
       if (['mp4', 'webm', 'ogg'].includes(ext)) {
@@ -493,7 +487,6 @@
       }
     }
 
-    // --- MODAL LÓGICA ---
     const postModal = document.getElementById('postModal');
     const openPostModalBtn = document.getElementById('openPostModalBtn');
     const closePostModalBtn = document.getElementById('closePostModalBtn');
@@ -540,7 +533,6 @@
       showPosts();
     };
 
-    // Añadir reply a post
     async function addReply(postId, inputId) {
       if(!currentUser) { alert('Inicia sesión primero'); return; }
       const input = document.getElementById(inputId);
@@ -562,15 +554,13 @@
       showPosts();
     }
 
-    // Comprobar si un mensaje puede eliminarse (propietario y menos de 2h)
     function canDeleteMessage(messageUser, messageTimestamp) {
       if(currentUser !== messageUser) return false;
       const now = Date.now();
       const diff = now - messageTimestamp;
-      return diff < 2 * 60 * 60 * 1000; // 2 horas en ms
+      return diff < 2 * 60 * 60 * 1000;
     }
 
-    // Eliminar post completo
     async function deletePost(postId) {
       const idx = db.posts.findIndex(p => p.id === postId);
       if(idx === -1) return;
@@ -584,7 +574,6 @@
       showPosts();
     }
 
-    // Eliminar reply dentro de post
     async function deleteReply(postId, replyId) {
       const post = db.posts.find(p => p.id === postId);
       if(!post) return;
@@ -600,7 +589,6 @@
       showPosts();
     }
 
-    // Mostrar posts y replies
     function showPosts() {
       const postsDiv = document.getElementById('posts');
       postsDiv.innerHTML = '';
@@ -609,12 +597,10 @@
         const postDiv = document.createElement('div');
         postDiv.className = 'post';
 
-        // Usuario
         const userBold = document.createElement('b');
         userBold.textContent = post.user;
         postDiv.appendChild(userBold);
 
-        // Botón eliminar post (si puede)
         if(canDeleteMessage(post.user, post.timestamp)) {
           const delBtn = document.createElement('button');
           delBtn.textContent = 'Eliminar';
@@ -623,7 +609,6 @@
           postDiv.appendChild(delBtn);
         }
 
-        // Texto
         if(post.text) {
           const textP = document.createElement('p');
           textP.textContent = post.text;
@@ -631,12 +616,10 @@
           postDiv.appendChild(textP);
         }
 
-        // Media
         if(post.media) {
           postDiv.appendChild(createMediaElement(post.media));
         }
 
-        // Replies
         post.replies.forEach(rep => {
           const replyDiv = document.createElement('div');
           replyDiv.className = 'reply';
@@ -645,7 +628,6 @@
           replyContent.innerHTML = `<b>${rep.user}:</b> ${rep.text}`;
           replyDiv.appendChild(replyContent);
 
-          // Botón eliminar reply si puede
           if(canDeleteMessage(rep.user, rep.timestamp)) {
             const delBtnR = document.createElement('button');
             delBtnR.textContent = 'Eliminar';
@@ -659,7 +641,6 @@
           postDiv.appendChild(replyDiv);
         });
 
-        // Reply input
         const replyInputDiv = document.createElement('div');
         replyInputDiv.className = 'reply-input';
 
@@ -681,7 +662,6 @@
       });
     }
 
-    // Al cargar la página:
     window.onload = async () => {
       await fetchDB();
       loadFromStorage();
