@@ -2,7 +2,7 @@
 <html lang="es">
 <head>
   <meta charset="UTF-8" />
-  <title>MiniReddit Mejorado</title>
+  <title>MiniReddit Mejorado con eliminación</title>
   <style>
     @import url('https://fonts.googleapis.com/css2?family=Roboto+Mono&family=Roboto:wght@400;700&display=swap');
 
@@ -107,6 +107,7 @@
       margin-bottom: 25px;
       user-select: text;
       transition: background-color 0.25s ease;
+      position: relative;
     }
 
     .post:hover {
@@ -139,6 +140,7 @@
       box-shadow: 0 0 5px #ff450022;
       user-select: text;
       font-size: 0.9rem;
+      position: relative;
     }
 
     .reply b {
@@ -168,6 +170,26 @@
       border-radius: 8px;
     }
 
+    .btn-delete {
+      background: #a83232;
+      color: white;
+      border: none;
+      font-size: 0.8rem;
+      padding: 4px 8px;
+      border-radius: 8px;
+      cursor: pointer;
+      position: absolute;
+      right: 12px;
+      top: 12px;
+      transition: background-color 0.2s ease;
+      user-select: none;
+      z-index: 1;
+    }
+
+    .btn-delete:hover {
+      background: #cc3e3e;
+    }
+
     /* Scrollbar para textarea */
     textarea::-webkit-scrollbar {
       width: 8px;
@@ -180,7 +202,7 @@
   </style>
 </head>
 <body>
-  <h2>MiniReddit Mejorado</h2>
+  <h2>MiniReddit Mejorado con eliminación</h2>
 
   <div id="authSection">
     <input id="username" placeholder="Usuario" autocomplete="off" />
@@ -207,10 +229,12 @@
     let db = { users: [], posts: [] };
     let currentUser = null;
 
+    // Guarda usuario en localStorage para sesión persistente
     function saveToStorage() {
       localStorage.setItem('redditUser', currentUser);
     }
 
+    // Carga usuario de sesión
     function loadFromStorage() {
       const user = localStorage.getItem('redditUser');
       if (user) {
@@ -221,6 +245,7 @@
       }
     }
 
+    // Obtener DB JSONBin
     async function fetchDB() {
       try {
         const res = await fetch(`https://api.jsonbin.io/v3/b/${BIN_ID}/latest`, {
@@ -234,6 +259,7 @@
       }
     }
 
+    // Actualizar DB JSONBin
     async function updateDB() {
       await fetch(`https://api.jsonbin.io/v3/b/${BIN_ID}`, {
         method: 'PUT',
@@ -246,86 +272,61 @@
       });
     }
 
+    // Registro simple
     function register() {
-      const user = username.value.trim();
-      const pass = password.value;
-      if (!user || !pass) return alert("Completa usuario y contraseña");
-
-      if (db.users.find(u => u.user === user)) return alert("Usuario ya existe");
-
+      const user = document.getElementById('username').value.trim();
+      const pass = document.getElementById('password').value.trim();
+      if(!user || !pass) { alert('Rellena usuario y contraseña'); return; }
+      if(db.users.find(u => u.user === user)) {
+        alert('Usuario ya existe');
+        return;
+      }
       db.users.push({ user, pass });
-      currentUser = user;
-      saveToStorage();
-      updateDB();
-      document.getElementById('authSection').style.display = 'none';
-      document.getElementById('app').style.display = 'block';
-      document.getElementById('currentUser').innerText = currentUser;
+      updateDB().then(() => {
+        alert('Usuario registrado, ahora inicia sesión');
+      });
     }
 
+    // Login simple (sin hash para simplificar)
     function login() {
-      const user = username.value.trim();
-      const pass = password.value;
-      const u = db.users.find(u => u.user === user && u.pass === pass);
-      if (!u) return alert("Credenciales incorrectas");
-
+      const user = document.getElementById('username').value.trim();
+      const pass = document.getElementById('password').value.trim();
+      const found = db.users.find(u => u.user === user && u.pass === pass);
+      if(!found) { alert('Usuario o contraseña incorrectos'); return; }
       currentUser = user;
       saveToStorage();
       document.getElementById('authSection').style.display = 'none';
       document.getElementById('app').style.display = 'block';
       document.getElementById('currentUser').innerText = currentUser;
+      showPosts();
     }
 
     function logout() {
+      currentUser = null;
       localStorage.removeItem('redditUser');
-      location.reload();
+      document.getElementById('authSection').style.display = 'block';
+      document.getElementById('app').style.display = 'none';
     }
 
+    // Subir archivo a Imgur y obtener URL
     async function uploadToImgur(file) {
       const form = new FormData();
-      form.append("image", file);
-      const res = await fetch("https://api.imgur.com/3/image", {
-        method: "POST",
-        headers: { Authorization: `Client-ID ${IMGUR_CLIENT_ID}` },
+      form.append('image', file);
+      const res = await fetch('https://api.imgur.com/3/image', {
+        method: 'POST',
+        headers: { Authorization: 'Client-ID ' + IMGUR_CLIENT_ID },
         body: form
       });
       const json = await res.json();
-      if (!json.success) throw new Error('Error subiendo imagen a Imgur');
-      return json.data.link;
-    }
-
-    async function createPost() {
-      const text = newPostText.value.trim();
-      const file = newPostFile.files[0];
-
-      if (!text && !file) return alert("Publicación vacía");
-
-      let mediaURL = '';
-      if (file) {
-        try {
-          mediaURL = await uploadToImgur(file);
-        } catch (e) {
-          alert('Error subiendo archivo. Intenta otra vez.');
-          return;
-        }
+      if(json.success) {
+        return json.data.link;
+      } else {
+        alert('Error subiendo archivo a Imgur');
+        return null;
       }
-
-      db.posts.push({ id: Date.now(), user: currentUser, text, media: mediaURL, replies: [] });
-      newPostText.value = '';
-      newPostFile.value = '';
-      await updateDB();
-      showPosts();
     }
 
-    async function addReply(postId, inputId) {
-      const replyText = document.getElementById(inputId).value.trim();
-      if (!replyText) return;
-
-      const post = db.posts.find(p => p.id === postId);
-      post.replies.push({ user: currentUser, text: replyText });
-      await updateDB();
-      showPosts();
-    }
-
+    // Crear elemento media (img o video)
     function createMediaElement(url) {
       const ext = url.split('.').pop().toLowerCase();
       if (['mp4', 'webm', 'ogg'].includes(ext)) {
@@ -342,17 +343,122 @@
       }
     }
 
+    // Crear post (hilo)
+    async function createPost() {
+      if(!currentUser) { alert('Inicia sesión primero'); return; }
+      const text = document.getElementById('newPostText').value.trim();
+      const fileInput = document.getElementById('newPostFile');
+      if(!text && fileInput.files.length === 0) {
+        alert('Escribe un texto o sube un archivo');
+        return;
+      }
+
+      let mediaUrl = null;
+      if(fileInput.files.length > 0) {
+        mediaUrl = await uploadToImgur(fileInput.files[0]);
+        if(!mediaUrl) return;
+      }
+
+      const newPost = {
+        id: 'post_' + Date.now() + '_' + Math.floor(Math.random() * 1000),
+        user: currentUser,
+        text,
+        media: mediaUrl,
+        replies: [],
+        timestamp: Date.now()
+      };
+
+      db.posts.push(newPost);
+      await updateDB();
+      document.getElementById('newPostText').value = '';
+      fileInput.value = '';
+      showPosts();
+    }
+
+    // Añadir reply a post
+    async function addReply(postId, inputId) {
+      if(!currentUser) { alert('Inicia sesión primero'); return; }
+      const input = document.getElementById(inputId);
+      const text = input.value.trim();
+      if(!text) return;
+
+      const post = db.posts.find(p => p.id === postId);
+      if(!post) return;
+
+      post.replies.push({
+        id: 'rep_' + Date.now() + '_' + Math.floor(Math.random() * 1000),
+        user: currentUser,
+        text,
+        timestamp: Date.now()
+      });
+
+      await updateDB();
+      input.value = '';
+      showPosts();
+    }
+
+    // Comprobar si un mensaje puede eliminarse (propietario y menos de 2h)
+    function canDeleteMessage(messageUser, messageTimestamp) {
+      if(currentUser !== messageUser) return false;
+      const now = Date.now();
+      const diff = now - messageTimestamp;
+      return diff < 2 * 60 * 60 * 1000; // 2 horas en ms
+    }
+
+    // Eliminar post completo
+    async function deletePost(postId) {
+      const idx = db.posts.findIndex(p => p.id === postId);
+      if(idx === -1) return;
+      if(!canDeleteMessage(db.posts[idx].user, db.posts[idx].timestamp)) {
+        alert('No puedes eliminar este hilo (solo si eres el autor y menos de 2 horas)');
+        return;
+      }
+      if(!confirm('¿Seguro que quieres eliminar este hilo?')) return;
+      db.posts.splice(idx, 1);
+      await updateDB();
+      showPosts();
+    }
+
+    // Eliminar reply dentro de post
+    async function deleteReply(postId, replyId) {
+      const post = db.posts.find(p => p.id === postId);
+      if(!post) return;
+      const idx = post.replies.findIndex(r => r.id === replyId);
+      if(idx === -1) return;
+      if(!canDeleteMessage(post.replies[idx].user, post.replies[idx].timestamp)) {
+        alert('No puedes eliminar este comentario (solo si eres el autor y menos de 2 horas)');
+        return;
+      }
+      if(!confirm('¿Seguro que quieres eliminar este comentario?')) return;
+      post.replies.splice(idx, 1);
+      await updateDB();
+      showPosts();
+    }
+
+    // Mostrar posts y replies
     function showPosts() {
       const postsDiv = document.getElementById('posts');
       postsDiv.innerHTML = '';
+
       db.posts.slice().reverse().forEach(post => {
         const postDiv = document.createElement('div');
         postDiv.className = 'post';
 
+        // Usuario
         const userBold = document.createElement('b');
         userBold.textContent = post.user;
         postDiv.appendChild(userBold);
 
+        // Botón eliminar post (si puede)
+        if(canDeleteMessage(post.user, post.timestamp)) {
+          const delBtn = document.createElement('button');
+          delBtn.textContent = 'Eliminar';
+          delBtn.className = 'btn-delete';
+          delBtn.onclick = () => deletePost(post.id);
+          postDiv.appendChild(delBtn);
+        }
+
+        // Texto
         if(post.text) {
           const textP = document.createElement('p');
           textP.textContent = post.text;
@@ -360,6 +466,7 @@
           postDiv.appendChild(textP);
         }
 
+        // Media
         if(post.media) {
           postDiv.appendChild(createMediaElement(post.media));
         }
@@ -368,7 +475,22 @@
         post.replies.forEach(rep => {
           const replyDiv = document.createElement('div');
           replyDiv.className = 'reply';
-          replyDiv.innerHTML = `<b>${rep.user}:</b> ${rep.text}`;
+
+          const replyContent = document.createElement('div');
+          replyContent.innerHTML = `<b>${rep.user}:</b> ${rep.text}`;
+          replyDiv.appendChild(replyContent);
+
+          // Botón eliminar reply si puede
+          if(canDeleteMessage(rep.user, rep.timestamp)) {
+            const delBtnR = document.createElement('button');
+            delBtnR.textContent = 'Eliminar';
+            delBtnR.className = 'btn-delete';
+            delBtnR.style.top = '6px';
+            delBtnR.style.right = '6px';
+            delBtnR.onclick = () => deleteReply(post.id, rep.id);
+            replyDiv.appendChild(delBtnR);
+          }
+
           postDiv.appendChild(replyDiv);
         });
 
@@ -399,6 +521,7 @@
       await fetchDB();
       loadFromStorage();
     };
+
   </script>
 </body>
 </html>
