@@ -61,6 +61,24 @@
       background: #e03e00;
     }
 
+    #openPostModalBtn {
+      position: fixed;
+      top: 20px;
+      left: 50%;
+      transform: translateX(-50%);
+      z-index: 1000;
+      background: #ff4500;
+      color: white;
+      font-weight: 700;
+      padding: 13px 28px;
+      border-radius: 14px;
+      border: none;
+      box-shadow: 0 2px 12px #ff450033;
+      cursor: pointer;
+      font-size: 1.1em;
+      letter-spacing: 1px;
+    }
+
     #authSection {
       max-width: 360px;
       margin: 0 auto 40px;
@@ -83,16 +101,6 @@
     #app p span#currentUser {
       font-weight: 700;
       color: #ff7f50;
-    }
-
-    #newPostText {
-      min-height: 90px;
-    }
-
-    #newPostFile {
-      margin-top: -10px;
-      margin-bottom: 20px;
-      cursor: pointer;
     }
 
     #posts {
@@ -126,6 +134,7 @@
       border-radius: 12px;
       box-shadow: 0 2px 12px #ff450033;
       user-select: none;
+      display: block;
     }
 
     .post video.media {
@@ -190,6 +199,47 @@
       background: #cc3e3e;
     }
 
+    /* Modal estilos */
+    #postModal {
+      display: none;
+      position: fixed;
+      top: 0; left: 0;
+      width: 100vw; height: 100vh;
+      background: #000a;
+      z-index: 2000;
+      justify-content: center;
+      align-items: flex-start;
+    }
+    #postModal > div {
+      background: #181818;
+      margin-top: 60px;
+      border-radius: 18px;
+      box-shadow: 0 0 30px #ff450088;
+      padding: 36px 28px 28px 28px;
+      min-width: 320px;
+      max-width: 94vw;
+      width: 380px;
+      position: relative;
+      animation: modalpop 0.22s cubic-bezier(.47,1.64,.41,.8);
+    }
+    @keyframes modalpop {
+      from { transform: translateY(-70px) scale(.95); opacity:0;}
+      to { transform: translateY(0) scale(1); opacity:1;}
+    }
+
+    #closePostModalBtn {
+      position: absolute;
+      top: 14px;
+      right: 16px;
+      font-size: 1.5em;
+      background: none;
+      border: none;
+      color: #ff4500;
+      font-weight: 700;
+      cursor: pointer;
+      line-height: 1;
+    }
+
     /* Scrollbar para textarea */
     textarea::-webkit-scrollbar {
       width: 8px;
@@ -198,11 +248,13 @@
       background: #ff4500cc;
       border-radius: 4px;
     }
-
   </style>
 </head>
 <body>
   <h2>MiniReddit Mejorado con eliminación</h2>
+
+  <!-- Botón fijo arriba-centro -->
+  <button id="openPostModalBtn">Crear post</button>
 
   <div id="authSection">
     <input id="username" placeholder="Usuario" autocomplete="off" />
@@ -213,12 +265,18 @@
 
   <div id="app" style="display:none;">
     <p>Bienvenido, <span id="currentUser"></span> <button onclick="logout()">Cerrar sesión</button></p>
-
-    <textarea id="newPostText" placeholder="Escribe un nuevo hilo..."></textarea>
-    <input type="file" id="newPostFile" accept="image/*,video/mp4,video/webm,video/ogg" />
-    <button onclick="createPost()">Publicar</button>
-
     <div id="posts"></div>
+  </div>
+
+  <!-- Modal Crear Post -->
+  <div id="postModal">
+    <div>
+      <button id="closePostModalBtn" title="Cerrar modal">&times;</button>
+      <h3 style="text-align:center;color:#ff4500;margin-bottom:18px;">Crear nuevo post</h3>
+      <textarea id="modalPostText" placeholder="Escribe tu mensaje..." style="min-height:70px;width:100%;margin-bottom:12px;"></textarea>
+      <input type="file" id="modalPostFile" accept="image/*,video/mp4,video/webm,video/ogg" style="margin-bottom:18px; color:#eee;" />
+      <button id="modalPublishBtn" style="width:100%;">Publicar</button>
+    </div>
   </div>
 
   <script>
@@ -343,22 +401,39 @@
       }
     }
 
-    // Crear post (hilo)
-    async function createPost() {
+    // --- MODAL LÓGICA ---
+    const postModal = document.getElementById('postModal');
+    const openPostModalBtn = document.getElementById('openPostModalBtn');
+    const closePostModalBtn = document.getElementById('closePostModalBtn');
+    const modalPublishBtn = document.getElementById('modalPublishBtn');
+    const modalPostText = document.getElementById('modalPostText');
+    const modalPostFile = document.getElementById('modalPostFile');
+
+    openPostModalBtn.onclick = () => {
+      if(!currentUser){
+        alert('Inicia sesión primero');
+        return;
+      }
+      postModal.style.display = 'flex';
+      modalPostText.value = '';
+      modalPostFile.value = '';
+      setTimeout(()=>modalPostText.focus(),100);
+    };
+    closePostModalBtn.onclick = () => postModal.style.display = 'none';
+
+    modalPublishBtn.onclick = async () => {
       if(!currentUser) { alert('Inicia sesión primero'); return; }
-      const text = document.getElementById('newPostText').value.trim();
-      const fileInput = document.getElementById('newPostFile');
+      const text = modalPostText.value.trim();
+      const fileInput = modalPostFile;
       if(!text && fileInput.files.length === 0) {
         alert('Escribe un texto o sube un archivo');
         return;
       }
-
       let mediaUrl = null;
       if(fileInput.files.length > 0) {
         mediaUrl = await uploadToImgur(fileInput.files[0]);
         if(!mediaUrl) return;
       }
-
       const newPost = {
         id: 'post_' + Date.now() + '_' + Math.floor(Math.random() * 1000),
         user: currentUser,
@@ -367,13 +442,11 @@
         replies: [],
         timestamp: Date.now()
       };
-
       db.posts.push(newPost);
       await updateDB();
-      document.getElementById('newPostText').value = '';
-      fileInput.value = '';
+      postModal.style.display = 'none';
       showPosts();
-    }
+    };
 
     // Añadir reply a post
     async function addReply(postId, inputId) {
@@ -521,7 +594,6 @@
       await fetchDB();
       loadFromStorage();
     };
-
   </script>
 </body>
 </html>
