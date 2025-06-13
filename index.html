@@ -1,484 +1,527 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-<meta charset="UTF-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1" />
-<title>Mini Reddit con BinJSON y subida multimedia</title>
-<style>
-  /* Reset y base */
-  * {
-    box-sizing: border-box;
-  }
-  body {
-    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-    background: #e9ecef;
-    margin: 0; padding: 0;
-    display: flex; flex-direction: column; min-height: 100vh;
-  }
-  header {
-    background-color: #343a40;
-    color: white;
-    padding: 1rem 2rem;
-    font-size: 1.5rem;
-    font-weight: bold;
-    user-select: none;
-  }
-  main {
-    flex: 1;
-    max-width: 900px;
-    margin: 1rem auto;
-    width: 95%;
-  }
-  #login-section, #new-post-section {
-    background: white;
-    border-radius: 8px;
-    padding: 15px 20px;
-    margin-bottom: 1rem;
-    box-shadow: 0 2px 8px rgb(0 0 0 / 0.1);
-  }
-  #login-section input, #new-post-section input, #new-post-section textarea {
-    width: 100%;
-    padding: 8px 10px;
-    margin: 0.3rem 0 1rem 0;
-    border: 1px solid #ccc;
-    border-radius: 4px;
-    font-size: 1rem;
-  }
-  #login-section button, #new-post-section button {
-    cursor: pointer;
-    background-color: #007bff;
-    color: white;
-    font-weight: 600;
-    border: none;
-    border-radius: 5px;
-    padding: 10px 15px;
-    transition: background-color 0.3s ease;
-  }
-  #login-section button:hover, #new-post-section button:hover {
-    background-color: #0056b3;
-  }
-  
-  /* Zona de posts con fondo gris claro y scroll si hay overflow */
-  #posts {
-    background-color: #f8f9fa;
-    padding: 20px;
-    border-radius: 8px;
-    max-height: 70vh;
-    overflow-y: auto;
-    box-shadow: 0 2px 6px rgba(0,0,0,0.1);
-  }
+  <meta charset="UTF-8" />
+  <title>MiniReddit Mejorado con eliminación</title>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Roboto+Mono&family=Roboto:wght@400;700&display=swap');
 
-  /* Cada post/hilo */
-  .post {
-    background: #ffffffdd; /* blanco semi-transparente */
-    border-radius: 8px;
-    padding: 15px 20px;
-    margin-bottom: 15px;
-    box-shadow: 0 1px 3px rgb(0 0 0 / 0.1);
-  }
-  /* Si es respuesta, indentamos y aclaramos un poco */
-  .reply {
-    background: #f0f0f0dd;
-    margin-left: 30px;
-  }
+    body {
+      background: #121212;
+      color: #ddd;
+      font-family: 'Roboto', sans-serif;
+      max-width: 700px;
+      margin: 30px auto;
+      padding: 0 20px 50px;
+      user-select: none;
+    }
 
-  .post-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    font-size: 0.9rem;
-    color: #666;
-    margin-bottom: 8px;
-  }
-  .post-username {
-    font-weight: 700;
-    color: #222;
-  }
-  .post-timestamp {
-    font-style: italic;
-  }
+    h2 {
+      text-align: center;
+      color: #ff4500;
+      margin-bottom: 25px;
+      font-weight: 700;
+      letter-spacing: 1.5px;
+    }
 
-  .post-content {
-    font-size: 1rem;
-    margin-bottom: 10px;
-    white-space: pre-wrap;
-  }
+    input, textarea {
+      width: 100%;
+      background: #222;
+      border: 1.5px solid #333;
+      border-radius: 8px;
+      padding: 10px 15px;
+      margin: 8px 0 15px;
+      color: #eee;
+      font-size: 1rem;
+      resize: vertical;
+      font-family: 'Roboto Mono', monospace;
+      transition: border-color 0.3s ease;
+    }
 
-  .post-media img,
-  .post-media video {
-    max-width: 100%;
-    max-height: 300px;
-    border-radius: 6px;
-    margin-top: 10px;
-  }
-  .post-media video {
-    display: block;
-  }
+    input:focus, textarea:focus {
+      outline: none;
+      border-color: #ff4500;
+      background: #2c2c2c;
+    }
 
-  .btn-delete {
-    background-color: #dc3545;
-    color: white;
-    border: none;
-    padding: 5px 10px;
-    border-radius: 5px;
-    cursor: pointer;
-    font-size: 0.8rem;
-    transition: background-color 0.3s ease;
-  }
-  .btn-delete:hover {
-    background-color: #a71d2a;
-  }
+    button {
+      background: #ff4500;
+      border: none;
+      color: white;
+      padding: 10px 22px;
+      font-size: 1rem;
+      border-radius: 10px;
+      cursor: pointer;
+      font-weight: 700;
+      transition: background-color 0.3s ease;
+      user-select: none;
+    }
 
-  /* Form de respuesta */
-  .reply-form {
-    margin-top: 10px;
-  }
-  .reply-form textarea {
-    width: 100%;
-    min-height: 50px;
-    resize: vertical;
-    padding: 6px 10px;
-    border-radius: 4px;
-    border: 1px solid #ccc;
-    font-size: 1rem;
-  }
-  .reply-form button {
-    margin-top: 6px;
-    background-color: #28a745;
-    padding: 7px 15px;
-    border-radius: 5px;
-    color: white;
-    font-weight: 600;
-    border: none;
-    cursor: pointer;
-  }
-  .reply-form button:hover {
-    background-color: #19692c;
-  }
+    button:hover {
+      background: #e03e00;
+    }
 
-</style>
+    #authSection {
+      max-width: 360px;
+      margin: 0 auto 40px;
+      background: #1e1e1e;
+      padding: 25px 20px 30px;
+      border-radius: 15px;
+      box-shadow: 0 0 20px #ff450044;
+    }
+
+    #app {
+      margin-top: 15px;
+    }
+
+    #app p {
+      font-size: 1.1rem;
+      margin-bottom: 15px;
+      font-weight: 500;
+    }
+
+    #app p span#currentUser {
+      font-weight: 700;
+      color: #ff7f50;
+    }
+
+    #newPostText {
+      min-height: 90px;
+    }
+
+    #newPostFile {
+      margin-top: -10px;
+      margin-bottom: 20px;
+      cursor: pointer;
+    }
+
+    #posts {
+      margin-top: 25px;
+    }
+
+    .post {
+      background: #222;
+      border-radius: 15px;
+      box-shadow: 0 2px 8px rgba(255, 69, 0, 0.3);
+      padding: 18px 22px;
+      margin-bottom: 25px;
+      user-select: text;
+      transition: background-color 0.25s ease;
+      position: relative;
+    }
+
+    .post:hover {
+      background: #2d2d2d;
+    }
+
+    .post b {
+      color: #ff4500;
+      font-size: 1.05rem;
+      letter-spacing: 0.7px;
+    }
+
+    .post .media {
+      margin: 12px 0;
+      max-width: 100%;
+      border-radius: 12px;
+      box-shadow: 0 2px 12px #ff450033;
+      user-select: none;
+    }
+
+    .post video.media {
+      max-height: 280px;
+    }
+
+    .reply {
+      background: #2b2b2b;
+      border-radius: 12px;
+      margin: 10px 0 10px 20px;
+      padding: 10px 16px;
+      box-shadow: 0 0 5px #ff450022;
+      user-select: text;
+      font-size: 0.9rem;
+      position: relative;
+    }
+
+    .reply b {
+      color: #ff7f50;
+    }
+
+    .reply:last-child {
+      margin-bottom: 5px;
+    }
+
+    .reply-input {
+      display: flex;
+      margin-top: 10px;
+      gap: 10px;
+      margin-left: 20px;
+    }
+
+    .reply-input input {
+      flex-grow: 1;
+      margin: 0;
+    }
+
+    .reply-input button {
+      flex-shrink: 0;
+      padding: 10px 15px;
+      font-size: 0.95rem;
+      border-radius: 8px;
+    }
+
+    .btn-delete {
+      background: #a83232;
+      color: white;
+      border: none;
+      font-size: 0.8rem;
+      padding: 4px 8px;
+      border-radius: 8px;
+      cursor: pointer;
+      position: absolute;
+      right: 12px;
+      top: 12px;
+      transition: background-color 0.2s ease;
+      user-select: none;
+      z-index: 1;
+    }
+
+    .btn-delete:hover {
+      background: #cc3e3e;
+    }
+
+    /* Scrollbar para textarea */
+    textarea::-webkit-scrollbar {
+      width: 8px;
+    }
+    textarea::-webkit-scrollbar-thumb {
+      background: #ff4500cc;
+      border-radius: 4px;
+    }
+
+  </style>
 </head>
 <body>
-<header>Mini Reddit Demo</header>
+  <h2>MiniReddit Mejorado con eliminación</h2>
 
-<main>
+  <div id="authSection">
+    <input id="username" placeholder="Usuario" autocomplete="off" />
+    <input id="password" type="password" placeholder="Contraseña" autocomplete="off" />
+    <button onclick="register()">Registrar</button>
+    <button onclick="login()">Iniciar Sesión</button>
+  </div>
 
-<section id="login-section">
-  <label for="username-input"><strong>Nombre de usuario:</strong></label>
-  <input type="text" id="username-input" placeholder="Tu nombre de usuario" maxlength="20" />
-  <button id="login-btn">Entrar</button>
-</section>
+  <div id="app" style="display:none;">
+    <p>Bienvenido, <span id="currentUser"></span> <button onclick="logout()">Cerrar sesión</button></p>
 
-<section id="new-post-section" style="display:none;">
-  <h3>Nuevo Hilo</h3>
-  <input type="text" id="post-title" placeholder="Título (opcional)" maxlength="100" />
-  <textarea id="post-text" placeholder="Escribe tu mensaje aquí..." rows="4"></textarea>
-  <label for="media-upload">Subir imagen, gif o video (max 10MB):</label>
-  <input type="file" id="media-upload" accept="image/*,video/*" />
-  <button id="post-btn">Publicar</button>
-</section>
+    <textarea id="newPostText" placeholder="Escribe un nuevo hilo..."></textarea>
+    <input type="file" id="newPostFile" accept="image/*,video/mp4,video/webm,video/ogg" />
+    <button onclick="createPost()">Publicar</button>
 
-<section id="posts">
-  <!-- Aquí irán los posts dinámicamente -->
-</section>
+    <div id="posts"></div>
+  </div>
 
-</main>
+  <script>
+    const API_KEY = '$2a$10$W7r2d0gmDZE45aqzwLFbTumNYrlgnya.eify2ghIr2Ebrf0aupxWu';
+    const BIN_ID = '684bc56e8a456b7966ad4b58';
+    const IMGUR_CLIENT_ID = '6d8568e498ff7bc';
 
-<script>
-  // --- Datos en memoria ---
-  let posts = []; // array de posts y replies
-  let username = null;
-  const binId = "684bc56e8a456b7966ad4b58";
-  const apiKey = "$2a$10$W7r2d0gmDZE45aqzwLFbTumNYrlgnya.eify2ghIr2Ebrf0aupxWu";
+    let db = { users: [], posts: [] };
+    let currentUser = null;
 
-  // Helpers para fecha y hora
-  function formatDate(timestamp) {
-    const d = new Date(timestamp);
-    return d.toLocaleString();
-  }
+    // Guarda usuario en localStorage para sesión persistente
+    function saveToStorage() {
+      localStorage.setItem('redditUser', currentUser);
+    }
 
-  function canDelete(post) {
-    if (post.author !== username) return false;
-    const now = Date.now();
-    return (now - post.timestamp) < 2 * 60 * 60 * 1000; // 2 horas en ms
-  }
+    // Carga usuario de sesión
+    function loadFromStorage() {
+      const user = localStorage.getItem('redditUser');
+      if (user) {
+        currentUser = user;
+        document.getElementById('authSection').style.display = 'none';
+        document.getElementById('app').style.display = 'block';
+        document.getElementById('currentUser').innerText = currentUser;
+      }
+    }
 
-  // Guardar posts en binjson.io
-  async function savePosts() {
-    try {
-      const res = await fetch(`https://api.jsonbin.io/v3/b/${binId}`, {
+    // Obtener DB JSONBin
+    async function fetchDB() {
+      try {
+        const res = await fetch(`https://api.jsonbin.io/v3/b/${BIN_ID}/latest`, {
+          headers: { 'X-Master-Key': API_KEY }
+        });
+        const json = await res.json();
+        db = json.record;
+        showPosts();
+      } catch(e) {
+        alert('Error al cargar la base de datos JSONBin.');
+      }
+    }
+
+    // Actualizar DB JSONBin
+    async function updateDB() {
+      await fetch(`https://api.jsonbin.io/v3/b/${BIN_ID}`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
-          'X-Master-Key': apiKey
+          'X-Master-Key': API_KEY,
+          'X-Bin-Versioning': 'false'
         },
-        body: JSON.stringify(posts)
+        body: JSON.stringify(db)
       });
-      if (!res.ok) throw new Error("Error al guardar datos");
-    } catch(e) {
-      console.error("Error guardando en binjson:", e);
     }
-  }
 
-  // Cargar posts de binjson.io
-  async function loadPosts() {
-    try {
-      const res = await fetch(`https://api.jsonbin.io/v3/b/${binId}/latest`, {
-        headers: {
-          'X-Master-Key': apiKey
-        }
+    // Registro simple
+    function register() {
+      const user = document.getElementById('username').value.trim();
+      const pass = document.getElementById('password').value.trim();
+      if(!user || !pass) { alert('Rellena usuario y contraseña'); return; }
+      if(db.users.find(u => u.user === user)) {
+        alert('Usuario ya existe');
+        return;
+      }
+      db.users.push({ user, pass });
+      updateDB().then(() => {
+        alert('Usuario registrado, ahora inicia sesión');
       });
-      if (!res.ok) throw new Error("Error al cargar datos");
-      const data = await res.json();
-      posts = data.record || [];
-      renderPosts();
-    } catch(e) {
-      console.error("Error cargando de binjson:", e);
-    }
-  }
-
-  // Renderiza posts y replies en la pantalla
-  function renderPosts() {
-    const container = document.getElementById('posts');
-    container.innerHTML = '';
-
-    // Función recursiva para renderizar post + sus replies
-    function renderPost(post, isReply = false) {
-      const div = document.createElement('div');
-      div.className = 'post' + (isReply ? ' reply' : '');
-      div.dataset.id = post.id;
-
-      // Header con usuario y fecha + botón eliminar si puede
-      const header = document.createElement('div');
-      header.className = 'post-header';
-
-      const userSpan = document.createElement('span');
-      userSpan.className = 'post-username';
-      userSpan.textContent = post.author;
-
-      const timeSpan = document.createElement('span');
-      timeSpan.className = 'post-timestamp';
-      timeSpan.textContent = formatDate(post.timestamp);
-
-      header.appendChild(userSpan);
-      header.appendChild(timeSpan);
-
-      if(canDelete(post)) {
-        const delBtn = document.createElement('button');
-        delBtn.className = 'btn-delete';
-        delBtn.textContent = 'Eliminar';
-        delBtn.onclick = () => {
-          if(confirm('¿Quieres eliminar este mensaje?')) {
-            deletePost(post.id);
-          }
-        };
-        header.appendChild(delBtn);
-      }
-
-      div.appendChild(header);
-
-      // Contenido
-      const content = document.createElement('div');
-      content.className = 'post-content';
-      content.textContent = post.text;
-      div.appendChild(content);
-
-      // Media si hay
-      if(post.media) {
-        const mediaDiv = document.createElement('div');
-        mediaDiv.className = 'post-media';
-        if(post.media.type.startsWith('image')) {
-          const img = document.createElement('img');
-          img.src = post.media.url;
-          img.alt = "Imagen subida";
-          mediaDiv.appendChild(img);
-        } else if(post.media.type.startsWith('video')) {
-          const vid = document.createElement('video');
-          vid.src = post.media.url;
-          vid.controls = true;
-          mediaDiv.appendChild(vid);
-        }
-        div.appendChild(mediaDiv);
-      }
-
-      // Si no es reply, mostrar formulario para responder
-      if(!isReply) {
-        const replyForm = document.createElement('form');
-        replyForm.className = 'reply-form';
-
-        const replyTextarea = document.createElement('textarea');
-        replyTextarea.placeholder = "Responder...";
-        replyTextarea.rows = 2;
-        replyTextarea.required = true;
-        replyForm.appendChild(replyTextarea);
-
-        const replyBtn = document.createElement('button');
-        replyBtn.type = 'submit';
-        replyBtn.textContent = 'Responder';
-        replyForm.appendChild(replyBtn);
-
-        replyForm.onsubmit = (e) => {
-          e.preventDefault();
-          const text = replyTextarea.value.trim();
-          if(text === '') return alert('Escribe algo para responder');
-          addReply(post.id, text);
-          replyTextarea.value = '';
-        };
-
-        div.appendChild(replyForm);
-      }
-
-      container.appendChild(div);
-
-      // Render replies si hay
-      if(post.replies && post.replies.length) {
-        post.replies.forEach(r => renderPost(r, true));
-      }
     }
 
-    posts.forEach(p => renderPost(p));
-  }
-
-  // Añadir post nuevo
-  async function addPost(title, text, media) {
-    const id = 'p' + Date.now() + Math.floor(Math.random()*1000);
-    const newPost = {
-      id,
-      author: username,
-      title: title || '',
-      text,
-      timestamp: Date.now(),
-      media: media || null,
-      replies: []
-    };
-    posts.unshift(newPost); // poner al principio
-    await savePosts();
-    renderPosts();
-  }
-
-  // Añadir reply a un post por id
-  async function addReply(postId, text) {
-    const id = 'r' + Date.now() + Math.floor(Math.random()*1000);
-    const reply = {
-      id,
-      author: username,
-      text,
-      timestamp: Date.now(),
-      media: null
-    };
-    // Buscar post padre
-    function findPostById(arr, id) {
-      for(const p of arr) {
-        if(p.id === id) return p;
-        if(p.replies) {
-          const r = findPostById(p.replies, id);
-          if(r) return r;
-        }
-      }
-      return null;
+    // Login simple (sin hash para simplificar)
+    function login() {
+      const user = document.getElementById('username').value.trim();
+      const pass = document.getElementById('password').value.trim();
+      const found = db.users.find(u => u.user === user && u.pass === pass);
+      if(!found) { alert('Usuario o contraseña incorrectos'); return; }
+      currentUser = user;
+      saveToStorage();
+      document.getElementById('authSection').style.display = 'none';
+      document.getElementById('app').style.display = 'block';
+      document.getElementById('currentUser').innerText = currentUser;
+      showPosts();
     }
-    const post = findPostById(posts, postId);
-    if(post) {
-      if(!post.replies) post.replies = [];
-      post.replies.push(reply);
-      await savePosts();
-      renderPosts();
-    }
-  }
 
-  // Eliminar post o reply por id (solo propio y <2h)
-  async function deletePost(id) {
-    function recursiveDelete(arr, id) {
-      const index = arr.findIndex(p => p.id === id);
-      if(index !== -1) {
-        if(canDelete(arr[index])) {
-          arr.splice(index,1);
-          return true;
-        } else {
-          alert('No puedes eliminar este mensaje (más de 2 horas o no eres autor)');
-          return false;
-        }
-      }
-      for(const p of arr) {
-        if(p.replies) {
-          if(recursiveDelete(p.replies, id)) return true;
-        }
-      }
-      return false;
+    function logout() {
+      currentUser = null;
+      localStorage.removeItem('redditUser');
+      document.getElementById('authSection').style.display = 'block';
+      document.getElementById('app').style.display = 'none';
     }
-    if(recursiveDelete(posts, id)) {
-      await savePosts();
-      renderPosts();
-    }
-  }
 
-  // Subir imagen/video a Imgur y devolver URL pública
-  async function uploadMedia(file) {
-    const clientId = '6d8568e498ff7bc'; // tu Client ID Imgur
-    const formData = new FormData();
-    formData.append('image', file);
-
-    try {
+    // Subir archivo a Imgur y obtener URL
+    async function uploadToImgur(file) {
+      const form = new FormData();
+      form.append('image', file);
       const res = await fetch('https://api.imgur.com/3/image', {
         method: 'POST',
-        headers: {
-          Authorization: 'Client-ID ' + clientId,
-        },
-        body: formData
+        headers: { Authorization: 'Client-ID ' + IMGUR_CLIENT_ID },
+        body: form
       });
-      const data = await res.json();
-      if(data.success) {
-        return {
-          url: data.data.link,
-          type: file.type
-        };
+      const json = await res.json();
+      if(json.success) {
+        return json.data.link;
       } else {
         alert('Error subiendo archivo a Imgur');
         return null;
       }
-    } catch(e) {
-      alert('Error de conexión al subir archivo');
-      return null;
     }
-  }
 
-  // Control login y logout
-  const loginSection = document.getElementById('login-section');
-  const newPostSection = document.getElementById('new-post-section');
-  const loginBtn = document.getElementById('login-btn');
-  const usernameInput = document.getElementById('username-input');
-
-  loginBtn.onclick = () => {
-    const val = usernameInput.value.trim();
-    if(val.length < 3) return alert('El nombre de usuario debe tener al menos 3 caracteres');
-    username = val;
-    loginSection.style.display = 'none';
-    newPostSection.style.display = 'block';
-    loadPosts();
-  };
-
-  // Botón publicar nuevo post
-  const postBtn = document.getElementById('post-btn');
-  postBtn.onclick = async () => {
-    const title = document.getElementById('post-title').value.trim();
-    const text = document.getElementById('post-text').value.trim();
-    if(text.length === 0) return alert('Escribe algo en el mensaje');
-    const mediaFile = document.getElementById('media-upload').files[0];
-    let media = null;
-
-    if(mediaFile) {
-      if(mediaFile.size > 10*1024*1024) {
-        return alert('Archivo demasiado grande (máx 10MB)');
+    // Crear elemento media (img o video)
+    function createMediaElement(url) {
+      const ext = url.split('.').pop().toLowerCase();
+      if (['mp4', 'webm', 'ogg'].includes(ext)) {
+        const video = document.createElement('video');
+        video.src = url;
+        video.controls = true;
+        video.className = 'media';
+        return video;
+      } else {
+        const img = document.createElement('img');
+        img.src = url;
+        img.className = 'media';
+        return img;
       }
-      media = await uploadMedia(mediaFile);
-      if(!media) return;
     }
-    await addPost(title, text, media);
-    document.getElementById('post-title').value = '';
-    document.getElementById('post-text').value = '';
-    document.getElementById('media-upload').value = '';
-  };
 
-</script>
+    // Crear post (hilo)
+    async function createPost() {
+      if(!currentUser) { alert('Inicia sesión primero'); return; }
+      const text = document.getElementById('newPostText').value.trim();
+      const fileInput = document.getElementById('newPostFile');
+      if(!text && fileInput.files.length === 0) {
+        alert('Escribe un texto o sube un archivo');
+        return;
+      }
+
+      let mediaUrl = null;
+      if(fileInput.files.length > 0) {
+        mediaUrl = await uploadToImgur(fileInput.files[0]);
+        if(!mediaUrl) return;
+      }
+
+      const newPost = {
+        id: 'post_' + Date.now() + '_' + Math.floor(Math.random() * 1000),
+        user: currentUser,
+        text,
+        media: mediaUrl,
+        replies: [],
+        timestamp: Date.now()
+      };
+
+      db.posts.push(newPost);
+      await updateDB();
+      document.getElementById('newPostText').value = '';
+      fileInput.value = '';
+      showPosts();
+    }
+
+    // Añadir reply a post
+    async function addReply(postId, inputId) {
+      if(!currentUser) { alert('Inicia sesión primero'); return; }
+      const input = document.getElementById(inputId);
+      const text = input.value.trim();
+      if(!text) return;
+
+      const post = db.posts.find(p => p.id === postId);
+      if(!post) return;
+
+      post.replies.push({
+        id: 'rep_' + Date.now() + '_' + Math.floor(Math.random() * 1000),
+        user: currentUser,
+        text,
+        timestamp: Date.now()
+      });
+
+      await updateDB();
+      input.value = '';
+      showPosts();
+    }
+
+    // Comprobar si un mensaje puede eliminarse (propietario y menos de 2h)
+    function canDeleteMessage(messageUser, messageTimestamp) {
+      if(currentUser !== messageUser) return false;
+      const now = Date.now();
+      const diff = now - messageTimestamp;
+      return diff < 2 * 60 * 60 * 1000; // 2 horas en ms
+    }
+
+    // Eliminar post completo
+    async function deletePost(postId) {
+      const idx = db.posts.findIndex(p => p.id === postId);
+      if(idx === -1) return;
+      if(!canDeleteMessage(db.posts[idx].user, db.posts[idx].timestamp)) {
+        alert('No puedes eliminar este hilo (solo si eres el autor y menos de 2 horas)');
+        return;
+      }
+      if(!confirm('¿Seguro que quieres eliminar este hilo?')) return;
+      db.posts.splice(idx, 1);
+      await updateDB();
+      showPosts();
+    }
+
+    // Eliminar reply dentro de post
+    async function deleteReply(postId, replyId) {
+      const post = db.posts.find(p => p.id === postId);
+      if(!post) return;
+      const idx = post.replies.findIndex(r => r.id === replyId);
+      if(idx === -1) return;
+      if(!canDeleteMessage(post.replies[idx].user, post.replies[idx].timestamp)) {
+        alert('No puedes eliminar este comentario (solo si eres el autor y menos de 2 horas)');
+        return;
+      }
+      if(!confirm('¿Seguro que quieres eliminar este comentario?')) return;
+      post.replies.splice(idx, 1);
+      await updateDB();
+      showPosts();
+    }
+
+    // Mostrar posts y replies
+    function showPosts() {
+      const postsDiv = document.getElementById('posts');
+      postsDiv.innerHTML = '';
+
+      db.posts.slice().reverse().forEach(post => {
+        const postDiv = document.createElement('div');
+        postDiv.className = 'post';
+
+        // Usuario
+        const userBold = document.createElement('b');
+        userBold.textContent = post.user;
+        postDiv.appendChild(userBold);
+
+        // Botón eliminar post (si puede)
+        if(canDeleteMessage(post.user, post.timestamp)) {
+          const delBtn = document.createElement('button');
+          delBtn.textContent = 'Eliminar';
+          delBtn.className = 'btn-delete';
+          delBtn.onclick = () => deletePost(post.id);
+          postDiv.appendChild(delBtn);
+        }
+
+        // Texto
+        if(post.text) {
+          const textP = document.createElement('p');
+          textP.textContent = post.text;
+          textP.style.marginTop = '6px';
+          postDiv.appendChild(textP);
+        }
+
+        // Media
+        if(post.media) {
+          postDiv.appendChild(createMediaElement(post.media));
+        }
+
+        // Replies
+        post.replies.forEach(rep => {
+          const replyDiv = document.createElement('div');
+          replyDiv.className = 'reply';
+
+          const replyContent = document.createElement('div');
+          replyContent.innerHTML = `<b>${rep.user}:</b> ${rep.text}`;
+          replyDiv.appendChild(replyContent);
+
+          // Botón eliminar reply si puede
+          if(canDeleteMessage(rep.user, rep.timestamp)) {
+            const delBtnR = document.createElement('button');
+            delBtnR.textContent = 'Eliminar';
+            delBtnR.className = 'btn-delete';
+            delBtnR.style.top = '6px';
+            delBtnR.style.right = '6px';
+            delBtnR.onclick = () => deleteReply(post.id, rep.id);
+            replyDiv.appendChild(delBtnR);
+          }
+
+          postDiv.appendChild(replyDiv);
+        });
+
+        // Reply input
+        const replyInputDiv = document.createElement('div');
+        replyInputDiv.className = 'reply-input';
+
+        const inputReply = document.createElement('input');
+        const inputId = 'replyInput_' + post.id;
+        inputReply.id = inputId;
+        inputReply.placeholder = 'Responder...';
+
+        const btnReply = document.createElement('button');
+        btnReply.textContent = 'Enviar';
+        btnReply.onclick = () => addReply(post.id, inputId);
+
+        replyInputDiv.appendChild(inputReply);
+        replyInputDiv.appendChild(btnReply);
+
+        postDiv.appendChild(replyInputDiv);
+
+        postsDiv.appendChild(postDiv);
+      });
+    }
+
+    // Al cargar la página:
+    window.onload = async () => {
+      await fetchDB();
+      loadFromStorage();
+    };
+
+  </script>
 </body>
 </html>
