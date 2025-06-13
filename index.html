@@ -1,22 +1,190 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-  <meta charset="UTF-8">
-  <title>MiniReddit</title>
+  <meta charset="UTF-8" />
+  <title>MiniReddit Mejorado</title>
   <style>
-    body { background: #111; color: #eee; font-family: sans-serif; padding: 20px; max-width: 700px; margin: auto; }
-    input, textarea { width: 100%; padding: 8px; margin: 5px 0; background: #222; border: 1px solid #444; color: #eee; }
-    button { background: #ff4500; color: white; padding: 8px 16px; border: none; cursor: pointer; }
-    .post, .reply { border: 1px solid #333; padding: 10px; margin: 10px 0; background: #1a1a1a; }
-    .reply { margin-left: 20px; background: #222; }
+    @import url('https://fonts.googleapis.com/css2?family=Roboto+Mono&family=Roboto:wght@400;700&display=swap');
+
+    body {
+      background: #121212;
+      color: #ddd;
+      font-family: 'Roboto', sans-serif;
+      max-width: 700px;
+      margin: 30px auto;
+      padding: 0 20px 50px;
+      user-select: none;
+    }
+
+    h2 {
+      text-align: center;
+      color: #ff4500;
+      margin-bottom: 25px;
+      font-weight: 700;
+      letter-spacing: 1.5px;
+    }
+
+    input, textarea {
+      width: 100%;
+      background: #222;
+      border: 1.5px solid #333;
+      border-radius: 8px;
+      padding: 10px 15px;
+      margin: 8px 0 15px;
+      color: #eee;
+      font-size: 1rem;
+      resize: vertical;
+      font-family: 'Roboto Mono', monospace;
+      transition: border-color 0.3s ease;
+    }
+
+    input:focus, textarea:focus {
+      outline: none;
+      border-color: #ff4500;
+      background: #2c2c2c;
+    }
+
+    button {
+      background: #ff4500;
+      border: none;
+      color: white;
+      padding: 10px 22px;
+      font-size: 1rem;
+      border-radius: 10px;
+      cursor: pointer;
+      font-weight: 700;
+      transition: background-color 0.3s ease;
+      user-select: none;
+    }
+
+    button:hover {
+      background: #e03e00;
+    }
+
+    #authSection {
+      max-width: 360px;
+      margin: 0 auto 40px;
+      background: #1e1e1e;
+      padding: 25px 20px 30px;
+      border-radius: 15px;
+      box-shadow: 0 0 20px #ff450044;
+    }
+
+    #app {
+      margin-top: 15px;
+    }
+
+    #app p {
+      font-size: 1.1rem;
+      margin-bottom: 15px;
+      font-weight: 500;
+    }
+
+    #app p span#currentUser {
+      font-weight: 700;
+      color: #ff7f50;
+    }
+
+    #newPostText {
+      min-height: 90px;
+    }
+
+    #newPostFile {
+      margin-top: -10px;
+      margin-bottom: 20px;
+      cursor: pointer;
+    }
+
+    #posts {
+      margin-top: 25px;
+    }
+
+    .post {
+      background: #222;
+      border-radius: 15px;
+      box-shadow: 0 2px 8px rgba(255, 69, 0, 0.3);
+      padding: 18px 22px;
+      margin-bottom: 25px;
+      user-select: text;
+      transition: background-color 0.25s ease;
+    }
+
+    .post:hover {
+      background: #2d2d2d;
+    }
+
+    .post b {
+      color: #ff4500;
+      font-size: 1.05rem;
+      letter-spacing: 0.7px;
+    }
+
+    .post .media {
+      margin: 12px 0;
+      max-width: 100%;
+      border-radius: 12px;
+      box-shadow: 0 2px 12px #ff450033;
+      user-select: none;
+    }
+
+    .post video.media {
+      max-height: 280px;
+    }
+
+    .reply {
+      background: #2b2b2b;
+      border-radius: 12px;
+      margin: 10px 0 10px 20px;
+      padding: 10px 16px;
+      box-shadow: 0 0 5px #ff450022;
+      user-select: text;
+      font-size: 0.9rem;
+    }
+
+    .reply b {
+      color: #ff7f50;
+    }
+
+    .reply:last-child {
+      margin-bottom: 5px;
+    }
+
+    .reply-input {
+      display: flex;
+      margin-top: 10px;
+      gap: 10px;
+      margin-left: 20px;
+    }
+
+    .reply-input input {
+      flex-grow: 1;
+      margin: 0;
+    }
+
+    .reply-input button {
+      flex-shrink: 0;
+      padding: 10px 15px;
+      font-size: 0.95rem;
+      border-radius: 8px;
+    }
+
+    /* Scrollbar para textarea */
+    textarea::-webkit-scrollbar {
+      width: 8px;
+    }
+    textarea::-webkit-scrollbar-thumb {
+      background: #ff4500cc;
+      border-radius: 4px;
+    }
+
   </style>
 </head>
 <body>
-  <h2>MiniReddit</h2>
+  <h2>MiniReddit Mejorado</h2>
 
   <div id="authSection">
-    <input id="username" placeholder="Usuario">
-    <input id="password" type="password" placeholder="Contraseña">
+    <input id="username" placeholder="Usuario" autocomplete="off" />
+    <input id="password" type="password" placeholder="Contraseña" autocomplete="off" />
     <button onclick="register()">Registrar</button>
     <button onclick="login()">Iniciar Sesión</button>
   </div>
@@ -25,7 +193,7 @@
     <p>Bienvenido, <span id="currentUser"></span> <button onclick="logout()">Cerrar sesión</button></p>
 
     <textarea id="newPostText" placeholder="Escribe un nuevo hilo..."></textarea>
-    <input type="file" id="newPostFile">
+    <input type="file" id="newPostFile" accept="image/*,video/mp4,video/webm,video/ogg" />
     <button onclick="createPost()">Publicar</button>
 
     <div id="posts"></div>
@@ -54,12 +222,16 @@
     }
 
     async function fetchDB() {
-      const res = await fetch(`https://api.jsonbin.io/v3/b/${BIN_ID}/latest`, {
-        headers: { 'X-Master-Key': API_KEY }
-      });
-      const json = await res.json();
-      db = json.record;
-      showPosts();
+      try {
+        const res = await fetch(`https://api.jsonbin.io/v3/b/${BIN_ID}/latest`, {
+          headers: { 'X-Master-Key': API_KEY }
+        });
+        const json = await res.json();
+        db = json.record;
+        showPosts();
+      } catch(e) {
+        alert('Error al cargar la base de datos JSONBin.');
+      }
     }
 
     async function updateDB() {
@@ -117,6 +289,7 @@
         body: form
       });
       const json = await res.json();
+      if (!json.success) throw new Error('Error subiendo imagen a Imgur');
       return json.data.link;
     }
 
@@ -124,9 +297,16 @@
       const text = newPostText.value.trim();
       const file = newPostFile.files[0];
 
+      if (!text && !file) return alert("Publicación vacía");
+
       let mediaURL = '';
       if (file) {
-        mediaURL = await uploadToImgur(file);
+        try {
+          mediaURL = await uploadToImgur(file);
+        } catch (e) {
+          alert('Error subiendo archivo. Intenta otra vez.');
+          return;
+        }
       }
 
       db.posts.push({ id: Date.now(), user: currentUser, text, media: mediaURL, replies: [] });
@@ -146,26 +326,75 @@
       showPosts();
     }
 
-    function showPosts() {
-      posts.innerHTML = "";
-      db.posts.slice().reverse().forEach(post => {
-        const div = document.createElement('div');
-        div.className = 'post';
-        div.innerHTML = `<b>${post.user}</b>: ${post.text}<br>` +
-          (post.media ? `<br><${post.media.endsWith('.mp4') ? 'video controls' : 'img'} src="${post.media}" style="max-width:100%">` : '') +
-          `<br><input id="reply_${post.id}" placeholder="Responder..."><button onclick="addReply(${post.id}, 'reply_${post.id}')">Enviar</button>`;
+    function createMediaElement(url) {
+      const ext = url.split('.').pop().toLowerCase();
+      if (['mp4', 'webm', 'ogg'].includes(ext)) {
+        const video = document.createElement('video');
+        video.src = url;
+        video.controls = true;
+        video.className = 'media';
+        return video;
+      } else {
+        const img = document.createElement('img');
+        img.src = url;
+        img.className = 'media';
+        return img;
+      }
+    }
 
-        post.replies.forEach(r => {
+    function showPosts() {
+      const postsDiv = document.getElementById('posts');
+      postsDiv.innerHTML = '';
+      db.posts.slice().reverse().forEach(post => {
+        const postDiv = document.createElement('div');
+        postDiv.className = 'post';
+
+        const userBold = document.createElement('b');
+        userBold.textContent = post.user;
+        postDiv.appendChild(userBold);
+
+        if(post.text) {
+          const textP = document.createElement('p');
+          textP.textContent = post.text;
+          textP.style.marginTop = '6px';
+          postDiv.appendChild(textP);
+        }
+
+        if(post.media) {
+          postDiv.appendChild(createMediaElement(post.media));
+        }
+
+        // Replies
+        post.replies.forEach(rep => {
           const replyDiv = document.createElement('div');
           replyDiv.className = 'reply';
-          replyDiv.innerHTML = `<b>${r.user}</b>: ${r.text}`;
-          div.appendChild(replyDiv);
+          replyDiv.innerHTML = `<b>${rep.user}:</b> ${rep.text}`;
+          postDiv.appendChild(replyDiv);
         });
 
-        posts.appendChild(div);
+        // Reply input
+        const replyInputDiv = document.createElement('div');
+        replyInputDiv.className = 'reply-input';
+
+        const inputReply = document.createElement('input');
+        const inputId = 'replyInput_' + post.id;
+        inputReply.id = inputId;
+        inputReply.placeholder = 'Responder...';
+
+        const btnReply = document.createElement('button');
+        btnReply.textContent = 'Enviar';
+        btnReply.onclick = () => addReply(post.id, inputId);
+
+        replyInputDiv.appendChild(inputReply);
+        replyInputDiv.appendChild(btnReply);
+
+        postDiv.appendChild(replyInputDiv);
+
+        postsDiv.appendChild(postDiv);
       });
     }
 
+    // Al cargar la página:
     window.onload = async () => {
       await fetchDB();
       loadFromStorage();
