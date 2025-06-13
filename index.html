@@ -14,6 +14,25 @@
       margin: 30px auto;
       padding: 0 20px 50px;
       user-select: none;
+      position: relative;
+      /* Para asegurar que los hijos relativos funcionen bien */
+      z-index: 0;
+    }
+
+    /* GRanja vertical decorativa de fondo */
+    .granja-vertical {
+      position: fixed;
+      top: 0;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 440px;      /* Más ancho que los posts */
+      height: 100vh;
+      background: #ededed;
+      opacity: 0.10;
+      border-radius: 48px;
+      z-index: 0;
+      box-shadow: 0 0 60px 20px #e0e0e0;
+      pointer-events: none;
     }
 
     h2 {
@@ -22,6 +41,8 @@
       margin-bottom: 25px;
       font-weight: 700;
       letter-spacing: 1.5px;
+      z-index: 1;
+      position: relative;
     }
 
     input, textarea {
@@ -86,10 +107,14 @@
       padding: 25px 20px 30px;
       border-radius: 15px;
       box-shadow: 0 0 20px #ff450044;
+      position: relative;
+      z-index: 1;
     }
 
     #app {
       margin-top: 15px;
+      position: relative;
+      z-index: 1;
     }
 
     #app p {
@@ -116,6 +141,7 @@
       user-select: text;
       transition: background-color 0.25s ease;
       position: relative;
+      z-index: 1;
     }
 
     .post:hover {
@@ -251,6 +277,7 @@
   </style>
 </head>
 <body>
+  <div class="granja-vertical"></div>
   <h2>MiniReddit Mejorado con eliminación</h2>
 
   <!-- Botón fijo arriba-centro -->
