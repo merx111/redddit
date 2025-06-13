@@ -3,10 +3,10 @@
 <head>
   <meta charset="UTF-8" />
   <title>Rumoreon</title>
+  <!-- IMPORTANTE: Material Icons de Google Fonts -->
   <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
   <style>
     @import url('https://fonts.googleapis.com/css2?family=Roboto+Mono&family=Roboto:wght@400;700&display=swap');
-
     body {
       background: #121212;
       color: #ddd;
@@ -16,7 +16,6 @@
       padding: 0 20px 50px;
       user-select: none;
     }
-
     h2 {
       text-align: center;
       color: #ff4500;
@@ -24,7 +23,6 @@
       font-weight: 700;
       letter-spacing: 1.5px;
     }
-
     input, textarea {
       width: 100%;
       background: #222;
@@ -38,13 +36,11 @@
       font-family: 'Roboto Mono', monospace;
       transition: border-color 0.3s ease;
     }
-
     input:focus, textarea:focus {
       outline: none;
       border-color: #ff4500;
       background: #2c2c2c;
     }
-
     button {
       background: #ff4500;
       border: none;
@@ -57,11 +53,9 @@
       transition: background-color 0.3s ease;
       user-select: none;
     }
-
     button:hover {
       background: #e03e00;
     }
-
     #openPostModalBtn {
       position: fixed;
       top: 20px;
@@ -79,7 +73,6 @@
       font-size: 1.1em;
       letter-spacing: 1px;
     }
-
     /* --- Hamburguesa --- */
     .hamburger {
       display: inline-block;
@@ -100,15 +93,16 @@
       border-radius: 2px;
       transition: 0.3s;
     }
+    /* --- Botón info --- */
     .info-btn {
-      top: 56px
       position: fixed;
-      right: 8px; /* MÁS a la derecha que antes */
+      top: 56px;
+      right: 34px; /* MÁS a la derecha */
       z-index: 1002;
       background: none;
       border: none;
       cursor: pointer;
-      padding: 3px;
+      padding: 6px;
     }
     .info-btn .material-icons {
       font-size: 2.3em;
@@ -159,8 +153,6 @@
     .menu button:hover {
       background: #e03e00;
     }
-    /* ------------------- */
-
     #authSection {
       max-width: 360px;
       margin: 0 auto 40px;
@@ -169,26 +161,21 @@
       border-radius: 15px;
       box-shadow: 0 0 20px #ff450044;
     }
-
     #app {
       margin-top: 15px;
     }
-
     #app p {
       font-size: 1.1rem;
       margin-bottom: 15px;
       font-weight: 500;
     }
-
     #app p span#currentUser {
       font-weight: 700;
       color: #ff7f50;
     }
-
     #posts {
       margin-top: 25px;
     }
-
     .post {
       background: #222;
       border-radius: 15px;
@@ -199,17 +186,14 @@
       transition: background-color 0.25s ease;
       position: relative;
     }
-
     .post:hover {
       background: #2d2d2d;
     }
-
     .post b {
       color: #ff4500;
       font-size: 1.05rem;
       letter-spacing: 0.7px;
     }
-
     .post .media {
       margin: 12px 0;
       max-width: 100%;
@@ -218,11 +202,9 @@
       user-select: none;
       display: block;
     }
-
     .post video.media {
       max-height: 280px;
     }
-
     .reply {
       background: #2b2b2b;
       border-radius: 12px;
@@ -233,34 +215,28 @@
       font-size: 0.9rem;
       position: relative;
     }
-
     .reply b {
       color: #ff7f50;
     }
-
     .reply:last-child {
       margin-bottom: 5px;
     }
-
     .reply-input {
       display: flex;
       margin-top: 10px;
       gap: 10px;
       margin-left: 20px;
     }
-
     .reply-input input {
       flex-grow: 1;
       margin: 0;
     }
-
     .reply-input button {
       flex-shrink: 0;
       padding: 10px 15px;
       font-size: 0.95rem;
       border-radius: 8px;
     }
-
     .btn-delete {
       background: #a83232;
       color: white;
@@ -276,11 +252,9 @@
       user-select: none;
       z-index: 1;
     }
-
     .btn-delete:hover {
       background: #cc3e3e;
     }
-
     /* Modal estilos */
     #postModal {
       display: none;
@@ -308,7 +282,6 @@
       from { transform: translateY(-70px) scale(.95); opacity:0;}
       to { transform: translateY(0) scale(1); opacity:1;}
     }
-
     #closePostModalBtn {
       position: absolute;
       top: 14px;
@@ -321,8 +294,6 @@
       cursor: pointer;
       line-height: 1;
     }
-
-    /* Scrollbar para textarea */
     textarea::-webkit-scrollbar {
       width: 8px;
     }
@@ -334,7 +305,6 @@
 </head>
 <body>
   <h2>Rumoreon</h2>
-
   <button id="openPostModalBtn">Crear post</button>
 
   <!-- Menú Hamburguesa -->
@@ -343,9 +313,10 @@
     <span></span>
     <span></span>
   </div>
+  <!-- Botón info con Material Icons, más a la derecha -->
   <button class="info-btn" id="info-btn" title="Información">
-  <span class="material-icons">info</span>
-</button>
+    <span class="material-icons">info</span>
+  </button>
   <div class="menu" id="menu">
     <div id="menu-user-text" style="margin-bottom:10px;">
       <!-- Aquí se muestra el usuario si está logueado -->
@@ -400,6 +371,28 @@
         ? `<span>Usuario: <b style="color:#ff7f50">${user}</b></span>`
         : '';
     }
+
+    // Botón info funcionalidad
+    document.getElementById('info-btn').addEventListener('click', function() {
+      const win = window.open('about:blank');
+      if (win) {
+        win.document.write(`
+          <html>
+          <head>
+            <title>Acuerdos</title>
+            <style>
+              body, html { margin:0; padding:0; height:100%; }
+              iframe { border:none; width:100vw; height:100vh; }
+            </style>
+          </head>
+          <body>
+            <iframe src="acuerdos.html"></iframe>
+          </body>
+          </html>
+        `);
+        win.document.close();
+      }
+    });
 
     const API_KEY = '$2a$10$W7r2d0gmDZE45aqzwLFbTumNYrlgnya.eify2ghIr2Ebrf0aupxWu';
     const BIN_ID = '684bc56e8a456b7966ad4b58';
@@ -695,26 +688,6 @@
       loadFromStorage();
       updateMenuUserText();
     };
-    document.getElementById('info-btn').addEventListener('click', function() {
-  const win = window.open('about:blank');
-  if (win) {
-    win.document.write(`
-      <html>
-      <head>
-        <title>Acuerdos</title>
-        <style>
-          body, html { margin:0; padding:0; height:100%; }
-          iframe { border:none; width:100vw; height:100vh; }
-        </style>
-      </head>
-      <body>
-        <iframe src="acuerdos.html"></iframe>
-      </body>
-      </html>
-    `);
-    win.document.close();
-  }
-});
   </script>
 </body>
 </html>
