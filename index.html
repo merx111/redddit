@@ -9,8 +9,8 @@
   <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined" rel="stylesheet">
   <!-- FONTS -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Alfa+Slab+One&display=swap" rel="stylesheet">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Alfa+Slab+One&display=swap" rel="stylesheet">
   <style>
     @import url('https://fonts.googleapis.com/css2?family=Roboto+Mono&family=Roboto:wght@400;700&display=swap');
     body {
@@ -68,7 +68,6 @@
       position: fixed;
       top: 20px;
       left: 20px;
-      transform: none;
       z-index: 1000;
       background: #ff4500;
       color: white;
@@ -81,7 +80,6 @@
       font-size: 1.1em;
       letter-spacing: 1px;
     }
-    /* --- Hamburguesa --- */
     .hamburger {
       display: inline-block;
       cursor: pointer;
@@ -101,7 +99,6 @@
       border-radius: 2px;
       transition: 0.3s;
     }
-    /* --- Botón info --- */
     .info-btn {
       position: fixed;
       top: 56px;
@@ -127,10 +124,9 @@
       background: #292929;
       color: #ff7f50;
     }
-    /* --- Botón mail (moderación) --- */
     .mail-btn {
       position: fixed;
-      top: 106px; /* debajo del info-btn */
+      top: 106px;
       right: 10px;
       z-index: 1002;
       background: none;
@@ -335,6 +331,75 @@
       background: #ff4500cc;
       border-radius: 4px;
     }
+    .reaction-menu {
+      position: fixed;
+      background: #222;
+      border: 1.5px solid #ff4500;
+      border-radius: 10px;
+      padding: 6px 10px;
+      z-index: 9999;
+      box-shadow: 0 2px 10px #ff450055;
+      display: flex;
+      gap: 8px;
+      animation: modalpop 0.18s cubic-bezier(.47,1.64,.41,.8);
+    }
+    .reaction-menu span {
+      font-size: 1.5em;
+      cursor: pointer;
+      transition: transform 0.1s;
+    }
+    .reaction-menu span:hover {
+      transform: scale(1.25);
+      background: #2d2d2d;
+      border-radius: 4px;
+    }
+    .reactions-bar {
+      margin-top: 7px;
+      margin-bottom: 3px;
+      display: flex;
+      gap: 12px;
+      font-size: 1.15em;
+    }
+    .reactions-bar span {
+      cursor: pointer;
+      user-select: none;
+      border-radius: 5px;
+      padding: 1px 4px;
+      transition: background .15s;
+    }
+    .reactions-bar span:hover {
+      background: #ff450033;
+    }
+    .poll-block {
+      margin: 10px 0 0 0;
+      background: #181818;
+      border-radius: 10px;
+      padding: 12px;
+    }
+    .poll-block b {
+      color: #ff7f50;
+    }
+    .poll-option-btn {
+      margin: 4px 0;
+      display: block;
+      width: 100%;
+      background: #292929;
+      border: 1px solid #333;
+      color: #fff;
+      border-radius: 8px;
+      font-size: 1em;
+      cursor: pointer;
+      font-family: inherit;
+      transition: background .18s;
+      text-align: left;
+      padding-left: 14px;
+      padding-right: 14px;
+    }
+    .poll-option-btn:hover {
+      background: #ff450011;
+      color: #ff7f50;
+      border-color: #ff4500;
+    }
   </style>
 </head>
 <body>
@@ -356,12 +421,9 @@
     <span class="material-symbols-outlined">mail</span>
   </button>
   <div class="menu" id="menu">
-    <div id="menu-user-text" style="margin-bottom:10px;">
-      <!-- Aquí se muestra el usuario si está logueado -->
-    </div>
+    <div id="menu-user-text" style="margin-bottom:10px;"></div>
     <button onclick="logout();hideMenu()">Cerrar sesión</button>
   </div>
-  <!-- ------------------- -->
 
   <div id="authSection">
     <input id="username" placeholder="Usuario" autocomplete="off" />
@@ -381,13 +443,25 @@
       <button id="closePostModalBtn" title="Cerrar modal">&times;</button>
       <h3 style="text-align:center;color:#ff4500;margin-bottom:18px;">Crear nuevo post</h3>
       <textarea id="modalPostText" placeholder="Escribe tu mensaje..." style="min-height:70px;width:100%;margin-bottom:12px;"></textarea>
-      <input type="file" id="modalPostFile" accept="image/*,video/mp4,video/webm,video/ogg" style="margin-bottom:18px; color:#eee;" />
+      <input type="file" id="modalPostFile" accept="image/*,video/mp4,video/webm,video/ogg" style="margin-bottom:12px; color:#eee;" />
+      <!-- Sección de Votaciones -->
+      <div id="pollSection" style="margin-bottom:12px;">
+        <label style="color:#ff7f50;font-weight:600;">
+          <input type="checkbox" id="enablePoll" style="vertical-align:middle;margin-right:5px;">
+          Añadir votación
+        </label>
+        <div id="pollOptionsContainer" style="display:none;margin-top:8px;">
+          <input type="text" class="pollOption" placeholder="Opción 1">
+          <input type="text" class="pollOption" placeholder="Opción 2">
+          <button type="button" id="addPollOptionBtn" style="margin-top:5px;">Añadir opción</button>
+        </div>
+      </div>
       <button id="modalPublishBtn" style="width:100%;">Publicar</button>
     </div>
   </div>
 
   <script>
-    // Hamburguesa
+    // Hamburguesa y menú usuario
     const btn = document.getElementById('hamburger-btn');
     const menu = document.getElementById('menu');
     function hideMenu() { menu.classList.remove('active'); }
@@ -401,26 +475,20 @@
         menu.classList.remove('active');
       }
     });
-
-    // Corrige el usuario mostrado en el menú hamburguesa
     function updateMenuUserText() {
       let user = (typeof currentUser === "string" && currentUser) || localStorage.getItem('redditUser');
       document.getElementById('menu-user-text').innerHTML = user 
         ? `<span>Usuario: <b style="color:#ff7f50">${user}</b></span>`
         : '';
     }
-
-    // Botón info funcionalidad
     document.getElementById('info-btn').addEventListener('click', function() {
       const win = window.open('about:blank');
       if (win) {
         win.document.write(`
-          <html>
-          <head>
+          <html><head>
             <title>Acuerdos</title>
-            <style>
-              body, html { margin:0; padding:0; height:100%; }
-              iframe { border:none; width:100vw; height:100vh; }
+            <style>body, html { margin:0; padding:0; height:100%; }
+            iframe { border:none; width:100vw; height:100vh; }
             </style>
           </head>
           <body>
@@ -431,8 +499,6 @@
         win.document.close();
       }
     });
-
-    // Botón mail funcionalidad
     document.getElementById('mail-btn').addEventListener('click', function() {
       window.location.href = "moderacion.html";
     });
@@ -447,7 +513,6 @@
     function saveToStorage() {
       localStorage.setItem('redditUser', currentUser);
     }
-
     function loadFromStorage() {
       const user = localStorage.getItem('redditUser');
       if (user) {
@@ -457,7 +522,6 @@
         document.getElementById('currentUser').innerText = currentUser;
       }
     }
-
     async function fetchDB() {
       try {
         const res = await fetch(`https://api.jsonbin.io/v3/b/${BIN_ID}/latest`, {
@@ -470,7 +534,6 @@
         alert('Error al cargar la base de datos JSONBin.');
       }
     }
-
     async function updateDB() {
       await fetch(`https://api.jsonbin.io/v3/b/${BIN_ID}`, {
         method: 'PUT',
@@ -482,7 +545,6 @@
         body: JSON.stringify(db)
       });
     }
-
     function register() {
       const user = document.getElementById('username').value.trim();
       const pass = document.getElementById('password').value.trim();
@@ -496,7 +558,6 @@
         alert('Usuario registrado, ahora inicia sesión');
       });
     }
-
     function login() {
       const user = document.getElementById('username').value.trim();
       const pass = document.getElementById('password').value.trim();
@@ -509,7 +570,6 @@
       document.getElementById('currentUser').innerText = currentUser;
       showPosts();
     }
-
     function logout() {
       currentUser = null;
       localStorage.removeItem('redditUser');
@@ -517,7 +577,6 @@
       document.getElementById('app').style.display = 'none';
       hideMenu();
     }
-
     async function uploadToImgur(file) {
       const form = new FormData();
       form.append('image', file);
@@ -534,7 +593,6 @@
         return null;
       }
     }
-
     function createMediaElement(url) {
       const ext = url.split('.').pop().toLowerCase();
       if (['mp4', 'webm', 'ogg'].includes(ext)) {
@@ -551,6 +609,62 @@
       }
     }
 
+    // --- VOTACIONES ---
+    const enablePoll = document.getElementById('enablePoll');
+    const pollOptionsContainer = document.getElementById('pollOptionsContainer');
+    const addPollOptionBtn = document.getElementById('addPollOptionBtn');
+    enablePoll.addEventListener('change', () => {
+      pollOptionsContainer.style.display = enablePoll.checked ? 'block' : 'none';
+    });
+    addPollOptionBtn.addEventListener('click', () => {
+      const newOption = document.createElement('input');
+      newOption.type = 'text';
+      newOption.className = 'pollOption';
+      newOption.placeholder = `Opción ${pollOptionsContainer.querySelectorAll('.pollOption').length + 1}`;
+      pollOptionsContainer.insertBefore(newOption, addPollOptionBtn);
+    });
+
+    // --- REACCIONES ---
+    const emojiList = ['👍', '😂', '❤️', '😮', '😢', '😡', '🎉'];
+    let contextMenuDiv = null;
+    function showReactionMenu(x, y, onSelect) {
+      if(contextMenuDiv) contextMenuDiv.remove();
+      contextMenuDiv = document.createElement('div');
+      contextMenuDiv.className = 'reaction-menu';
+      contextMenuDiv.style.left = x + 'px';
+      contextMenuDiv.style.top = y + 'px';
+      emojiList.forEach(e => {
+        const btn = document.createElement('span');
+        btn.textContent = e;
+        btn.onclick = () => {
+          onSelect(e);
+          contextMenuDiv.remove();
+        };
+        contextMenuDiv.appendChild(btn);
+      });
+      document.body.appendChild(contextMenuDiv);
+      setTimeout(() => {
+        document.addEventListener('click', removeReactionMenu, { once: true });
+      }, 10);
+    }
+    function removeReactionMenu() {
+      if(contextMenuDiv) contextMenuDiv.remove();
+      contextMenuDiv = null;
+    }
+    function renderReactions(reactions, parentDiv, onReact) {
+      if (!reactions || Object.keys(reactions).length === 0) return;
+      const bar = document.createElement('div');
+      bar.className = 'reactions-bar';
+      for (const e of Object.keys(reactions)) {
+        const btn = document.createElement('span');
+        btn.textContent = `${e} ${reactions[e]}`;
+        btn.onclick = () => onReact(e);
+        bar.appendChild(btn);
+      }
+      parentDiv.appendChild(bar);
+    }
+
+    // --- Modal post ---
     const postModal = document.getElementById('postModal');
     const openPostModalBtn = document.getElementById('openPostModalBtn');
     const closePostModalBtn = document.getElementById('closePostModalBtn');
@@ -566,6 +680,13 @@
       postModal.style.display = 'flex';
       modalPostText.value = '';
       modalPostFile.value = '';
+      enablePoll.checked = false;
+      pollOptionsContainer.style.display = 'none';
+      // Reset poll options
+      Array.from(pollOptionsContainer.querySelectorAll('.pollOption')).forEach((el,i) => {
+        if(i < 2) el.value = '';
+        else el.remove();
+      });
       setTimeout(()=>modalPostText.focus(),100);
     };
     closePostModalBtn.onclick = () => postModal.style.display = 'none';
@@ -574,8 +695,8 @@
       if(!currentUser) { alert('Inicia sesión primero'); return; }
       const text = modalPostText.value.trim();
       const fileInput = modalPostFile;
-      if(!text && fileInput.files.length === 0) {
-        alert('Escribe un texto o sube un archivo');
+      if(!text && fileInput.files.length === 0 && !enablePoll.checked) {
+        alert('Escribe un texto, sube un archivo o añade una votación');
         return;
       }
       let mediaUrl = null;
@@ -583,13 +704,24 @@
         mediaUrl = await uploadToImgur(fileInput.files[0]);
         if(!mediaUrl) return;
       }
+      let poll = null;
+      if (enablePoll.checked) {
+        const opts = Array.from(pollOptionsContainer.querySelectorAll('.pollOption')).map(i => i.value.trim()).filter(Boolean);
+        if(opts.length < 2) {
+          alert('Debes poner al menos 2 opciones de votación.');
+          return;
+        }
+        poll = { options: opts, votes: Array(opts.length).fill(0), voters: [] };
+      }
       const newPost = {
         id: 'post_' + Date.now() + '_' + Math.floor(Math.random() * 1000),
         user: currentUser,
         text,
         media: mediaUrl,
         replies: [],
-        timestamp: Date.now()
+        timestamp: Date.now(),
+        poll,
+        reactions: {}
       };
       db.posts.push(newPost);
       await updateDB();
@@ -602,29 +734,25 @@
       const input = document.getElementById(inputId);
       const text = input.value.trim();
       if(!text) return;
-
       const post = db.posts.find(p => p.id === postId);
       if(!post) return;
-
       post.replies.push({
         id: 'rep_' + Date.now() + '_' + Math.floor(Math.random() * 1000),
         user: currentUser,
         text,
-        timestamp: Date.now()
+        timestamp: Date.now(),
+        reactions: {}
       });
-
       await updateDB();
       input.value = '';
       showPosts();
     }
-
     function canDeleteMessage(messageUser, messageTimestamp) {
       if(currentUser !== messageUser) return false;
       const now = Date.now();
       const diff = now - messageTimestamp;
       return diff < 2 * 60 * 60 * 1000;
     }
-
     async function deletePost(postId) {
       const idx = db.posts.findIndex(p => p.id === postId);
       if(idx === -1) return;
@@ -637,7 +765,6 @@
       await updateDB();
       showPosts();
     }
-
     async function deleteReply(postId, replyId) {
       const post = db.posts.find(p => p.id === postId);
       if(!post) return;
@@ -661,10 +788,12 @@
         const postDiv = document.createElement('div');
         postDiv.className = 'post';
 
+        // Usuario
         const userBold = document.createElement('b');
         userBold.textContent = post.user;
         postDiv.appendChild(userBold);
 
+        // Botón eliminar
         if(canDeleteMessage(post.user, post.timestamp)) {
           const delBtn = document.createElement('button');
           delBtn.textContent = 'Eliminar';
@@ -673,6 +802,7 @@
           postDiv.appendChild(delBtn);
         }
 
+        // Texto
         if(post.text) {
           const textP = document.createElement('p');
           textP.textContent = post.text;
@@ -680,10 +810,53 @@
           postDiv.appendChild(textP);
         }
 
+        // Media
         if(post.media) {
           postDiv.appendChild(createMediaElement(post.media));
         }
 
+        // Votación/Encuesta
+        if(post.poll){
+          const pollDiv = document.createElement('div');
+          pollDiv.className = 'poll-block';
+          pollDiv.innerHTML = '<b>Votación:</b><br>';
+          post.poll.options.forEach((opt, idx) => {
+            const btn = document.createElement('button');
+            btn.textContent = `${opt} (${post.poll.votes[idx]})`;
+            btn.className = 'poll-option-btn';
+            btn.onclick = async () => {
+              if(post.poll.voters && post.poll.voters.includes(currentUser)) {
+                alert('Ya has votado en esta encuesta.');
+                return;
+              }
+              post.poll.votes[idx]++;
+              if(!post.poll.voters) post.poll.voters = [];
+              post.poll.voters.push(currentUser);
+              await updateDB();
+              showPosts();
+            };
+            pollDiv.appendChild(btn);
+          });
+          postDiv.appendChild(pollDiv);
+        }
+
+        // Reacciones al post
+        postDiv.oncontextmenu = (e) => {
+          e.preventDefault();
+          showReactionMenu(e.clientX, e.clientY, async (emoji) => {
+            if(!post.reactions) post.reactions = {};
+            post.reactions[emoji] = (post.reactions[emoji] || 0) + 1;
+            await updateDB();
+            showPosts();
+          });
+        };
+        renderReactions(post.reactions, postDiv, async (emoji) => {
+          post.reactions[emoji]++;
+          await updateDB();
+          showPosts();
+        });
+
+        // Comentarios/replies
         post.replies.forEach(rep => {
           const replyDiv = document.createElement('div');
           replyDiv.className = 'reply';
@@ -692,6 +865,7 @@
           replyContent.innerHTML = `<b>${rep.user}:</b> ${rep.text}`;
           replyDiv.appendChild(replyContent);
 
+          // Botón eliminar comentario
           if(canDeleteMessage(rep.user, rep.timestamp)) {
             const delBtnR = document.createElement('button');
             delBtnR.textContent = 'Eliminar';
@@ -702,9 +876,26 @@
             replyDiv.appendChild(delBtnR);
           }
 
+          // Reacciones a replies
+          replyDiv.oncontextmenu = (e) => {
+            e.preventDefault();
+            showReactionMenu(e.clientX, e.clientY, async (emoji) => {
+              if(!rep.reactions) rep.reactions = {};
+              rep.reactions[emoji] = (rep.reactions[emoji] || 0) + 1;
+              await updateDB();
+              showPosts();
+            });
+          };
+          renderReactions(rep.reactions, replyDiv, async (emoji) => {
+            rep.reactions[emoji]++;
+            await updateDB();
+            showPosts();
+          });
+
           postDiv.appendChild(replyDiv);
         });
 
+        // Input para agregar comentarios
         const replyInputDiv = document.createElement('div');
         replyInputDiv.className = 'reply-input';
 
@@ -725,7 +916,6 @@
         postsDiv.appendChild(postDiv);
       });
     }
-
     window.onload = async () => {
       await fetchDB();
       loadFromStorage();
