@@ -307,7 +307,22 @@
       width: 380px;
       position: relative;
       animation: modalpop 0.22s cubic-bezier(.47,1.64,.41,.8);
+
+      /* --- INICIO MODIFICACIÓN PARA CENTRAR LOS CAMPOS --- */
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      /* --- FIN MODIFICACIÓN --- */
     }
+    /* --- INICIO MODIFICACIÓN PARA CENTRAR LOS CAMPOS --- */
+    #modalPostText,
+    #modalPostFile {
+      width: 95% !important;
+      margin-left: auto;
+      margin-right: auto;
+      display: block;
+    }
+    /* --- FIN MODIFICACIÓN --- */
     @keyframes modalpop {
       from { transform: translateY(-70px) scale(.95); opacity:0;}
       to { transform: translateY(0) scale(1); opacity:1;}
